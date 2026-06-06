@@ -5,6 +5,51 @@ All notable changes to RE_Playground will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-06-06
+
+### Added
+
+#### Windows / .NET RE Toolchain (6 new installer tools)
+- **revula** — 116-tool all-in-one RE MCP server (PE/ELF/Mach-O, YARA, Capa, .NET IL, Frida, GDB, Android, exploit dev). Installed via `uv tool install 'revula[full]'`
+- **ILSpyMcpServer** — .NET assembly decompiler (C#/VB.NET → source). Installed via `dotnet tool install -g ILSpyMcp.Server`
+- **.NET SDK 9+** — runtime dependency for ilspycmd
+- **diec (Detect It Easy CLI)** — packer / compiler / cryptor identification
+- **YARA** — pattern-based malware identification (VirusTotal's rule engine)
+- **pefile (Python)** — Python PE parser library
+- New installer helpers: `_uv_tool_install`, `_pipx_or_pip_install`, `_dotnet_tool_install`
+- Total tool count: 18 → 23 (RE Core group: 9 → 15)
+
+#### MCP Server Expansion (3 new servers, all enabled by default)
+- **revula** (stdio) — 116 RE tools under one roof
+- **ilspy-mcp** (stdio) — .NET decompilation via natural language
+- **die-mcp** (stdio) — Detect-It-Easy wrapper for packer/compiler ID
+- Total MCP servers: 7 → 10, enabled: 4 → 7
+
+#### Multi-Container Deployment
+- `docker/core/Dockerfile` — OpenCode + 7 MCP servers + all RE tools (Ubuntu 24.04, tini entrypoint)
+- `docker/ghidra/Dockerfile` — Ghidra 11.3.2 + ghidra-mcp bridge, JVM heap friendly, 4 GB mem_limit
+- `docker/radare2/Dockerfile` — radare2 + rizin + r2mcp + Wine, with `SYS_PTRACE` capability for Win32 PE debug
+- `docker/filebrowser/Dockerfile` — FileBrowser Quantum on `/samples` (the only `:rw` mount in the stack)
+- `docker/radare2/entrypoint.sh` — health endpoint on :9090 + r2mcp launcher
+- `docker-compose.yml` — 5-service stack: `core`, `ghidra`, `radare2`, `memini`, `files` on shared `re-net` bridge network
+- `podman-compose.yml` — rootless variant with `userns_mode: keep-id`, `127.0.0.1:` port bindings, journald logging
+- Shared volumes: `re-samples` (one-way ingress), `re-workspace`, `re-ghidra-projects`, `re-memini-data`, `re-memini-config`, `re-filebrowser-db`, `re-filebrowser-cfg`
+- Healthchecks on every service; `depends_on` chains in correct order
+
+#### Documentation
+- `docs/learn-more.md` — curated reading list (419 lines) with GitHub links for 17 projects and 3-5 articles per tool
+- `docs/container.md` — full multi-container deployment guide (413 lines) with file-ingress security model, LAN access patterns (Tailscale / nginx / 0.0.0.0), GPU passthrough, systemd unit, troubleshooting
+- README "## Container Deployment" section added (66 lines, with ASCII architecture diagram)
+- MCP server table in README expanded to 10 entries (7 enabled)
+- Tool count and group totals corrected in README
+
+### Security
+- All new file paths in compose files are env-var driven or use named volumes
+- No hardcoded API keys, paths, or secrets in any new file (validated: 0 hits for `github_pat_`, `gho_`, `sk-*`, `/home/jcharles`, `jayminwest`)
+- 4 env-var references (`{env:OPENCODE_SERVER_PASSWORD}`, etc.) in `opencode.json` and compose files
+- File ingress isolated to the `re-files` container; agent containers mount `/samples` read-only
+- `SYS_PTRACE` capability scoped only to the `radare2` container
+
 ## [0.1.0] — 2026-06-06
 
 ### Added
