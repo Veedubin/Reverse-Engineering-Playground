@@ -1,0 +1,40 @@
+{
+  "_meta": {
+    "id": "ollama-cloud",
+    "name": "Ollama Cloud",
+    "url": "https://ollama.com",
+    "auth": "API key (https://ollama.com/settings/keys)",
+    "billing": "Pay-as-you-go, generally cheaper than direct vendor APIs",
+    "notes": "Single API key, OpenAI-compatible endpoint, huge model catalog. Best cost/coverage tradeoff for hobbyist RE work.",
+    "lastReviewed": "2026-06-06"
+  },
+  "npm": "@ai-sdk/openai-compatible",
+  "name": "Ollama Cloud",
+  "options": {
+    "baseURL": "{env:OLLAMA_BASE_URL}",
+    "apiKey": "{env:OLLAMA_API_KEY}"
+  },
+  "models": {
+    "kimi-k2.6:cloud":            { "name": "Kimi K2.6 (Cloud)",            "context": 200000 },
+    "glm-5.1:cloud":              { "name": "GLM 5.1 (Cloud)",                "context": 200000 },
+    "deepseek-v4-pro:cloud":      { "name": "DeepSeek V4 Pro (Cloud)",         "context": 128000 },
+    "deepseek-v4-flash:cloud":    { "name": "DeepSeek V4 Flash (Cloud)",       "context": 128000 },
+    "devstral-2:123b-cloud":      { "name": "Devstral 2 123B (Cloud)",         "context": 128000 },
+    "qwen3-coder-next:cloud":     { "name": "Qwen3 Coder Next (Cloud)",        "context": 128000 },
+    "minimax-m3-cloud":           { "name": "MiniMax M3 (Cloud)",              "context": 200000 },
+    "minimax-m2.7:cloud":         { "name": "MiniMax M2.7 (Cloud)",            "context": 200000 },
+    "gemma4:31b-cloud":           { "name": "Gemma 4 31B (Cloud)",             "context": 128000 },
+    "qwen3.5:397b-cloud":         { "name": "Qwen 3.5 397B (Cloud)",            "context": 128000 },
+    "qwen3.5:cloud":              { "name": "Qwen 3.5 (Cloud)",                 "context": 128000 },
+    "devstral-small-2:24b-cloud": { "name": "Devstral Small 2 24B (Cloud)",    "context": 128000 },
+    "gemma3:4b-cloud":            { "name": "Gemma 3 4B (Cloud)",              "context":  32000 },
+    "gemma3:12b-cloud":           { "name": "Gemma 3 12B (Cloud)",             "context":  64000 },
+    "gemma3:27b-cloud":           { "name": "Gemma 3 27B (Cloud)",             "context": 128000 }
+  },
+  "recommended": {
+    "_meta": "Suggested model aliases for agent roles. 'best' = strongest reasoning, 'fast' = strong but cheap, 'cheap' = budget tier.",
+    "best":  ["deepseek-v4-pro:cloud", "kimi-k2.6:cloud", "minimax-m3-cloud"],
+    "fast":  ["minimax-m3-cloud", "kimi-k2.6:cloud", "deepseek-v4-flash:cloud"],
+    "cheap": ["gemma3:4b-cloud", "gemma3:12b-cloud", "devstral-small-2:24b-cloud"]
+  }
+}

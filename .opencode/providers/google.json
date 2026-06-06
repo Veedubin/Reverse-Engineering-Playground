@@ -1,0 +1,27 @@
+{
+  "_meta": {
+    "id": "google",
+    "name": "Google AI (Gemini)",
+    "url": "https://aistudio.google.com",
+    "auth": "API key (https://aistudio.google.com/apikey)",
+    "billing": "Generous free tier, then pay-as-you-go. Often the cheapest premium option.",
+    "notes": "Gemini 2.5 Pro has a 1M token context window — perfect for ingesting whole APKs, large firmware blobs, or session logs.",
+    "lastReviewed": "2026-06-06"
+  },
+  "npm": "@ai-sdk/google",
+  "name": "Google AI",
+  "options": {
+    "apiKey": "{env:GOOGLE_API_KEY}"
+  },
+  "models": {
+    "gemini-2.5-pro":     { "name": "Gemini 2.5 Pro",     "context": 1000000 },
+    "gemini-2.5-flash":   { "name": "Gemini 2.5 Flash",   "context": 1000000 },
+    "gemini-2.5-flash-lite": { "name": "Gemini 2.5 Flash-Lite", "context": 1000000 }
+  },
+  "recommended": {
+    "_meta": "Gemini 2.5 Pro is the long-context RE champion. Flash is fast and cheap.",
+    "best":  ["gemini-2.5-pro"],
+    "fast":  ["gemini-2.5-flash"],
+    "cheap": ["gemini-2.5-flash-lite"]
+  }
+}

@@ -1,0 +1,66 @@
+# =============================================================================
+# RE_Playground .gitignore
+# =============================================================================
+
+# --- Secrets & env files ----------------------------------------------------
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.install-venv/
+venv/
+.venv/
+
+# --- Node / .opencode runtime ----------------------------------------------
+# Keep package-lock.json (deps are reproducible) but ignore the install
+.opencode/node_modules/
+.opencode/.install-venv/
+
+# --- Logs / dumps / runtime state ------------------------------------------
+*.log
+logs/
+*.dump
+*.core
+*.stackdump
+nohup.out
+.DS_Store
+Thumbs.db
+
+# --- Editor / IDE ----------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+
+# --- Test / coverage artifacts ---------------------------------------------
+.coverage
+coverage/
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# --- User RE work (the playground is framework, not targets) ---------------
+binaries/
+samples/
+targets/
+*.apk
+*.dex
+*.so
+*.dll
+*.bin
+*.fw
+*.img
+.opencode/opencode-old.json

@@ -1,0 +1,40 @@
+{
+  "_meta": {
+    "id": "openrouter",
+    "name": "OpenRouter",
+    "url": "https://openrouter.ai",
+    "auth": "API key (https://openrouter.ai/settings/keys)",
+    "billing": "Pay-as-you-go, per-token. Slight markup over direct APIs but access to every major model.",
+    "notes": "Single API key gives you Claude, GPT, Gemini, DeepSeek, Llama, etc. Easiest way to mix-and-match.",
+    "lastReviewed": "2026-06-06"
+  },
+  "npm": "@ai-sdk/openai-compatible",
+  "name": "OpenRouter",
+  "options": {
+    "baseURL": "https://openrouter.ai/api/v1",
+    "apiKey": "{env:OPENROUTER_API_KEY}"
+  },
+  "models": {
+    "anthropic/claude-sonnet-4.5":  { "name": "Anthropic: Claude Sonnet 4.5",     "context": 200000 },
+    "anthropic/claude-opus-4.5":    { "name": "Anthropic: Claude Opus 4.5",       "context": 200000 },
+    "anthropic/claude-haiku-4.5":   { "name": "Anthropic: Claude Haiku 4.5",      "context": 200000 },
+    "openai/gpt-5":                 { "name": "OpenAI: GPT-5",                    "context": 200000 },
+    "openai/gpt-5-mini":            { "name": "OpenAI: GPT-5 mini",               "context": 200000 },
+    "openai/gpt-4.1":               { "name": "OpenAI: GPT-4.1",                  "context":  128000 },
+    "openai/o4-mini":               { "name": "OpenAI: o4-mini (reasoning)",      "context":  128000 },
+    "google/gemini-2.5-pro":        { "name": "Google: Gemini 2.5 Pro",           "context": 1000000 },
+    "google/gemini-2.5-flash":      { "name": "Google: Gemini 2.5 Flash",         "context": 1000000 },
+    "deepseek/deepseek-chat-v3":    { "name": "DeepSeek: DeepSeek Chat V3",       "context":  128000 },
+    "deepseek/deepseek-r1":         { "name": "DeepSeek: R1 (reasoning)",         "context":  128000 },
+    "meta-llama/llama-4-405b":      { "name": "Meta: Llama 4 405B",               "context":  128000 },
+    "meta-llama/llama-4-70b":       { "name": "Meta: Llama 4 70B",                "context":  128000 },
+    "qwen/qwen-2.5-coder-32b":      { "name": "Qwen: 2.5 Coder 32B",              "context":  128000 },
+    "mistralai/codestral-25":       { "name": "Mistral: Codestral 25",            "context":  128000 }
+  },
+  "recommended": {
+    "_meta": "Best/balanced/cheap tiers on OpenRouter. Premium Anthropic and GPT-5 are top-quality for RE but pricey.",
+    "best":  ["anthropic/claude-opus-4.5", "openai/gpt-5", "google/gemini-2.5-pro", "deepseek/deepseek-r1"],
+    "fast":  ["anthropic/claude-sonnet-4.5", "openai/gpt-5-mini", "google/gemini-2.5-flash"],
+    "cheap": ["anthropic/claude-haiku-4.5", "openai/o4-mini", "meta-llama/llama-4-70b", "qwen/qwen-2.5-coder-32b"]
+  }
+}

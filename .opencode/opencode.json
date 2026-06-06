@@ -1,0 +1,219 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "name": "Ollama Cloud",
+      "api": "openai",
+      "options": {
+        "baseURL": "https://ollama.com/v1",
+        "apiKey": "{env:OLLAMA_API_KEY}"
+      },
+      "models": {
+        "kimi-k2.6": {
+          "name": "Kimi K2.6 (Cloud)"
+        },
+        "glm-5.1": {
+          "name": "GLM 5.1 (Cloud)"
+        },
+        "deepseek-v4-pro": {
+          "name": "DeepSeek V4 Pro (Cloud)"
+        },
+        "devstral-2:123b": {
+          "name": "Devstral 2 123B (Cloud)"
+        },
+        "deepseek-v4-flash": {
+          "name": "DeepSeek V4 Flash (Cloud)"
+        },
+        "qwen3-coder-next": {
+          "name": "Qwen3 Coder Next (Cloud)"
+        },
+        "minimax-m2.7": {
+          "name": "MiniMax M2.7 (Cloud)"
+        },
+        "minimax-m3": {
+          "name": "MiniMax M3 (Cloud)"
+        },
+        "gemma4:31b": {
+          "name": "Gemma 4 31B (Cloud)"
+        },
+        "qwen3.5": {
+          "name": "Qwen 3.5 (Cloud)"
+        },
+        "devstral-small-2:24b": {
+          "name": "Devstral Small 2 24B (Cloud)"
+        }
+      },
+      "npm": "@ai-sdk/openai-compatible"
+    }
+  },
+  "mcp": {
+    "searxng": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "mcp-searxng"
+      ],
+      "environment": {
+        "SEARXNG_URL": "http://localhost:8080"
+      },
+      "enabled": true
+    },
+    "super-memory-ts": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@veedubin/super-memory-ts"
+      ],
+      "environment": {
+        "QDRANT_URL": "http://localhost:6333",
+        "BOOMERANG_USE_GPU": "true",
+        "BOOMERANG_DEVICE": "auto",
+        "BOOMERANG_PRECISION": "fp16",
+        "BOOMERANG_PROJECT_ID": "mcp-servers",
+        "QUERY_COLLECTIONS": "memories_1024,memories_384"
+      },
+      "enabled": false
+    },
+    "github-mcp": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "environment": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:GITHUB_PERSONAL_ACCESS_TOKEN}"
+      },
+      "enabled": false
+    },
+    "markitdown": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "markitdown-mcp"
+      ],
+      "enabled": false
+    },
+    "playwright": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@playwright/mcp@latest"
+      ],
+      "enabled": false
+    },
+    "ghidra-mcp": {
+      "type": "local",
+      "command": [
+        "python",
+        "/opt/ghidra-mcp/bridge_mcp_ghidra.py"
+      ],
+      "environment": {
+        "GHIDRA_MCP_PORT": "8089",
+        "GHIDRA_MCP_AUTH_TOKEN": "",
+        "GHIDRA_MCP_ALLOW_SCRIPTS": "1"
+      },
+      "enabled": true
+    },
+    "radare2-mcp": {
+      "type": "local",
+      "command": [
+        "r2pm",
+        "-r",
+        "r2mcp"
+      ],
+      "enabled": true
+    },
+    "memini-ai-dev": {
+      "type": "local",
+      "command": [
+        "uv",
+        "run",
+        "--directory",
+        "{env:MEMINI_AI_DIR}",
+        "memini-ai",
+        "--stdio"
+      ],
+      "environment": {
+        "MEMINI_DB_URL": "{env:MEMINI_DB_URL}",
+        "MEMINI_EMBEDDING_DIM": "384",
+        "MEMINI_PROJECT_ID": "reverse_engineering",
+        "MEMINI_USE_GPU": "true",
+        "MEMINI_DEVICE": "auto",
+        "MEMINI_EAGER_LOAD": "true",
+        "MEMINI_PRECISION": "fp16",
+        "DB_SSLMODE": "disable",
+        "TRUST_ENGINE": "true",
+        "MEMORY_GRAPH": "true",
+        "KG_ENABLED": "true",
+        "TIERED_LOADING": "true",
+        "AUTO_EXTRACT": "true",
+        "PRECOMPRESS": "true",
+        "USER_MODELING": "true",
+        "DECAY_ENABLED": "true",
+        "MULTI_PEER_ENABLED": "true",
+        "DIALECTIC_ENABLED": "true",
+        "THOUGHT_CHAINS": "true",
+        "LLM_URL": "http://localhost:11434/api/generate",
+        "LLM_MODEL": "llama3.2"
+      },
+      "timeout": 60000,
+      "enabled": true
+    }
+  },
+  "plugin": [
+    "@veedubin/boomerang-v3",
+    "@neuralgentics/plugin",
+    "@franlol/opencode-md-table-formatter"
+  ],
+  "lsp": {
+    "typescript": {
+      "disabled": false,
+      "command": [
+        "npx",
+        "typescript-language-server",
+        "--stdio"
+      ]
+    },
+    "pyright": {
+      "disabled": false,
+      "command": [
+        "npx",
+        "pyright-langserver",
+        "--stdio"
+      ]
+    }
+  },
+  "formatter": {
+    "ruff": {
+      "command": [
+        "uvx",
+        "ruff",
+        "format",
+        "$FILE"
+      ]
+    },
+    "prettier": {
+      "disabled": false
+    }
+  },
+  "instructions": [
+    "AGENTS.md"
+  ],
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "reserved": 10000
+  },
+  "small_model": "ollama-cloud/devstral-small-2:24b-cloud",
+  "server": {
+    "port": 4096
+  },
+  "tool_output": {
+    "max_lines": 10000,
+    "max_bytes": 512000
+  }
+}
