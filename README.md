@@ -412,7 +412,6 @@ RE_Playground comes pre-configured with 8 MCP servers in `.opencode/opencode.jso
 | **radare2-mcp** | ✅ enabled | Fast binary triage and analysis | stdio (r2pipe) |
 | **memini-ai-dev** | ✅ enabled | PostgreSQL + pgvector semantic memory | stdio (Python FastMCP) |
 | **searxng** | ✅ enabled | Web search for research | HTTP |
-| **super-memory-ts** | ❌ disabled | Old Qdrant snapshot — kept for reference, do not enable | stdio |
 | **github-mcp** | ❌ disabled | GitHub API (PRs, issues, repos) | HTTP |
 | **markitdown** | ❌ disabled | Convert documents to Markdown | stdio |
 | **playwright** | ❌ disabled | Browser automation | stdio |
@@ -523,7 +522,6 @@ Context is expensive (in tokens). memini-ai loads at three tiers:
 | **github-mcp** | Enable if you want agents to create PRs, manage issues, or read/write files on GitHub. Requires `GITHUB_PERSONAL_ACCESS_TOKEN` in `.env`. |
 | **markitdown** | Enable to convert web pages, PDFs, and Office documents to Markdown for analysis. |
 | **playwright** | Enable for browser automation (e.g., scraping JS-heavy pages, form interaction). |
-| **super-memory-ts** | **Do not enable.** This is an old Qdrant-based memory snapshot kept for reference. memini-ai has replaced it. |
 
 ---
 

@@ -44,7 +44,6 @@ Core components:
 - **github-mcp** — GitHub API for PRs, issues, repos (disabled by default)
 - **markitdown** — Document→Markdown conversion (disabled by default)
 - **playwright** — Browser automation (disabled by default)
-- **super-memory-ts** — Legacy Qdrant snapshot (disabled, do not enable — replaced by memini-ai)
 
 ---
 

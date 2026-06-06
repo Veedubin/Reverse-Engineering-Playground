@@ -59,23 +59,6 @@
       },
       "enabled": true
     },
-    "super-memory-ts": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@veedubin/super-memory-ts"
-      ],
-      "environment": {
-        "QDRANT_URL": "http://localhost:6333",
-        "BOOMERANG_USE_GPU": "true",
-        "BOOMERANG_DEVICE": "auto",
-        "BOOMERANG_PRECISION": "fp16",
-        "BOOMERANG_PROJECT_ID": "mcp-servers",
-        "QUERY_COLLECTIONS": "memories_1024,memories_384"
-      },
-      "enabled": false
-    },
     "github-mcp": {
       "type": "local",
       "command": [
