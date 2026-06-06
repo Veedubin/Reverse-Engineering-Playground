@@ -226,6 +226,42 @@ def _npm_install(tool: Tool) -> str:
     return f"failed: {r.stderr.strip().splitlines()[-1] if r.stderr else 'unknown'}"
 
 
+def _uv_tool_install(tool: Tool, pkg: str | None = None) -> str:
+    """Install a Python CLI tool as an isolated `uv tool` (PEP 668 compliant)."""
+    name = pkg or tool.bin
+    r = _run(["uv", "tool", "install", name])
+    if r.returncode == 0:
+        return "installed"
+    return f"failed: {r.stderr.strip().splitlines()[-1] if r.stderr else 'unknown'}"
+
+
+def _pipx_or_pip_install(pkg: str) -> str:
+    """Install a Python library — prefer pipx for CLI tools, fall back to pip --user."""
+    if shutil.which("pipx"):
+        r = _run(["pipx", "install", pkg])
+        if r.returncode == 0:
+            return "installed"
+    r = _run([sys.executable, "-m", "pip", "install", "--user", pkg])
+    if r.returncode == 0:
+        return "installed"
+    return f"failed: {r.stderr.strip().splitlines()[-1] if r.stderr else 'unknown'}"
+
+
+def _dotnet_tool_install(pkg: str) -> str:
+    """Install a .NET global tool (needs dotnet-sdk already on PATH)."""
+    if not shutil.which("dotnet"):
+        return "skipped (dotnet-sdk not installed)"
+    # Ensure ~/.dotnet/tools is on PATH for the current run; persistent PATH
+    # modification is left to the user's shell rc (documented in README).
+    r = _run(["dotnet", "tool", "install", "-g", pkg])
+    if r.returncode == 0:
+        return "installed"
+    # If the tool is already installed, dotnet tool install fails — that's fine.
+    if "already installed" in (r.stderr or "").lower():
+        return "already installed"
+    return f"failed: {r.stderr.strip().splitlines()[-1] if r.stderr else 'unknown'}"
+
+
 def _brew_install(tool: Tool) -> str:
     cmd = ["brew", "install", tool.bin]
     if tool.bin.startswith("--cask"):
@@ -478,6 +514,100 @@ def build_catalog() -> list[Tool]:
         ),
         debian=lambda t: _pip_install(t),
         darwin=lambda t: _brew_install(t),
+    )
+
+    # ===== Windows / .NET RE =====
+    add(
+        "revula",
+        "revula (MCP server)",
+        "RE Core",
+        "All-in-one RE MCP server (PE/ELF/Mach-O, YARA, Capa, .NET IL, Frida, GDB, Android, exploit dev)",
+        "revula",
+        arch=lambda t: (
+            "skip (uv not installed)"
+            if not shutil.which("uv")
+            else _uv_tool_install(t, "revula[full]")
+        ),
+        debian=lambda t: (
+            "skip (uv not installed)"
+            if not shutil.which("uv")
+            else _uv_tool_install(t, "revula[full]")
+        ),
+        darwin=lambda t: (
+            "skip (uv not installed)"
+            if not shutil.which("uv")
+            else _uv_tool_install(t, "revula[full]")
+        ),
+    )
+    add(
+        "diec",
+        "diec (Detect It Easy CLI)",
+        "RE Core",
+        "Identify packer / compiler / cryptor on PE/ELF/Mach-O binaries",
+        "diec",
+        arch=lambda t: (
+            _pacman_install(_subst(t, "detect-it-easy"), True)
+            if _pacman_has("detect-it-easy")
+            else "manual (github.com/horsicq/Detect-It-Easy/releases)"
+        ),
+        debian=lambda t: (
+            _apt_install(t, True)
+            if _apt_has("detect-it-easy")
+            else "manual (github.com/horsicq/Detect-It-Easy/releases)"
+        ),
+        darwin=lambda t: (
+            _brew_install(t)
+            if shutil.which("brew")
+            else "manual (github.com/horsicq/Detect-It-Easy/releases)"
+        ),
+    )
+    add(
+        "yara",
+        "YARA",
+        "RE Core",
+        "Pattern-based malware identification (YARA rules)",
+        "yara",
+        arch=lambda t: _pacman_install(t, True) if _pacman_has("yara") else "manual",
+        debian=lambda t: _apt_install(t, True) if _apt_has("yara") else "manual",
+        darwin=lambda t: _brew_install(t),
+    )
+    add(
+        "pefile",
+        "pefile (Python)",
+        "RE Core",
+        "Python PE file parser library (used by revula, custom scripts)",
+        "python3",
+        arch=lambda t: _pipx_or_pip_install("pefile"),
+        debian=lambda t: _pipx_or_pip_install("pefile"),
+        darwin=lambda t: _pipx_or_pip_install("pefile"),
+    )
+    add(
+        "dotnet-sdk",
+        ".NET SDK 9+",
+        "RE Core",
+        ".NET SDK (required for ilspycmd .NET decompiler)",
+        "dotnet",
+        arch=lambda t: (
+            _aur_install(_subst(t, "dotnet-sdk"), "paru", False)
+            if shutil.which("paru")
+            else "manual (dotnet.microsoft.com/download)"
+        ),
+        debian=lambda t: (
+            "manual (use: wget -qO- https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 9.0)"
+            if not _apt_has("dotnet-sdk-9.0")
+            else _apt_install(_subst(t, "dotnet-sdk-9.0"), True)
+        ),
+        darwin=lambda t: _brew_install(_cask_subst(t, "dotnet-sdk")),
+    )
+    add(
+        "ilspycmd",
+        "ilspycmd (.NET decompiler)",
+        "RE Core",
+        "Command-line .NET assembly decompiler (dotnet tool; needs dotnet-sdk first)",
+        "ilspycmd",
+        arch=lambda t: _dotnet_tool_install("ilspycmd"),
+        debian=lambda t: _dotnet_tool_install("ilspycmd"),
+        darwin=lambda t: _dotnet_tool_install("ilspycmd"),
     )
 
     return tools

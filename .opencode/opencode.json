@@ -110,6 +110,29 @@
       ],
       "enabled": true
     },
+    "revula": {
+      "type": "local",
+      "command": [
+        "revula"
+      ],
+      "enabled": true
+    },
+    "ilspy-mcp": {
+      "type": "local",
+      "command": [
+        "ilspy-mcp"
+      ],
+      "enabled": true
+    },
+    "die-mcp": {
+      "type": "local",
+      "command": [
+        "python3",
+        "-m",
+        "die_mcp"
+      ],
+      "enabled": true
+    },
     "memini-ai-dev": {
       "type": "local",
       "command": [

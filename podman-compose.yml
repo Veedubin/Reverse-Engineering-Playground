@@ -1,0 +1,187 @@
+# RE_Playground — Podman Compose deployment
+#
+# Usage (rootless):
+#   podman-compose up -d
+#   podman-compose logs -f core
+#   podman-compose down
+#
+# Podman-specific notes:
+#   - No host port publishing in rootless mode by default (use slirp4netns)
+#   - `cap_add: SYS_PTRACE` works in rootless only with --userns=keep-id
+#   - pgvector image works identically; we just need the SLIRP DNS resolver
+#   - Healthchecks work the same; just install `podman-compose` from PyPI
+#
+# For systemd-managed rootless deployment, see docs/container.md.
+
+name: re-playground
+
+x-restart: &restart
+  restart: unless-stopped
+
+x-logging: &logging
+  logging:
+    driver: journald
+    options:
+      tag: "re-playground/{{.Name}}"
+
+services:
+  core:
+    <<: *restart
+    build:
+      context: .
+      dockerfile: docker/core/Dockerfile
+    image: re-playground-core:latest
+    container_name: re-core
+    hostname: re-core
+    networks:
+      - re-net
+    ports:
+      - "127.0.0.1:4096:4096"   # localhost-only (use reverse proxy for LAN)
+    environment:
+      OPENCODE_SERVER_PASSWORD: "${OPENCODE_SERVER_PASSWORD:-changeme}"
+      OPENCODE_SERVER_USERNAME: "${OPENCODE_SERVER_USERNAME:-opencode}"
+      GHIDRA_MCP_HOST: re-ghidra
+      GHIDRA_MCP_PORT: "8089"
+      RADARE2_MCP_HOST: re-radare2
+      RADARE2_MCP_PORT: "9090"
+      MEMINI_AI_DIR: /opt/re-playground/.opencode/memini-ai
+      MEMINI_DB_URL: postgresql://memini:memini@re-memini:5432/memini
+      MEMINI_PROJECT_ID: reverse_engineering
+      OLLAMA_API_KEY: "${OLLAMA_API_KEY:-}"
+      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:-}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      GOOGLE_API_KEY: "${GOOGLE_API_KEY:-}"
+    volumes:
+      - re-samples:/samples:ro
+      - re-workspace:/workspace
+      - re-memini-config:/opt/re-playground/.opencode/memini-ai
+    depends_on:
+      - ghidra
+      - radare2
+      - memini
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "-u", "opencode:${OPENCODE_SERVER_PASSWORD:-changeme}", "http://localhost:4096"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    userns_mode: keep-id
+
+  ghidra:
+    <<: *restart
+    build:
+      context: .
+      dockerfile: docker/ghidra/Dockerfile
+    image: re-playground-ghidra:latest
+    container_name: re-ghidra
+    hostname: re-ghidra
+    networks:
+      - re-net
+    expose:
+      - "8089"
+    volumes:
+      - re-samples:/samples:ro
+      - re-workspace:/workspace
+      - re-ghidra-projects:/ghidra-projects
+    environment:
+      GHIDRA_MCP_PORT: "8089"
+    mem_limit: 4g
+    depends_on:
+      - files
+    userns_mode: keep-id
+
+  radare2:
+    <<: *restart
+    build:
+      context: .
+      dockerfile: docker/radare2/Dockerfile
+    image: re-playground-radare2:latest
+    container_name: re-radare2
+    hostname: re-radare2
+    networks:
+      - re-net
+    expose:
+      - "9090"
+    volumes:
+      - re-samples:/samples:ro
+      - re-workspace:/workspace
+    environment:
+      R2MCP_PORT: "9090"
+    # ptrace for Wine+gdb; requires either root or --userns=keep-id
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    depends_on:
+      - files
+    userns_mode: keep-id
+
+  memini:
+    <<: *restart
+    image: pgvector/pgvector:pg16
+    container_name: re-memini
+    hostname: re-memini
+    networks:
+      - re-net
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_USER: memini
+      POSTGRES_PASSWORD: memini
+      POSTGRES_DB: memini
+    volumes:
+      - re-memini-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U memini"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+
+  files:
+    <<: *restart
+    build:
+      context: .
+      dockerfile: docker/filebrowser/Dockerfile
+    image: re-playground-filebrowser:latest
+    container_name: re-files
+    hostname: re-files
+    networks:
+      - re-net
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - re-samples:/samples
+      - re-filebrowser-db:/database
+      - re-filebrowser-cfg:/config
+    environment:
+      FB_NOAUTH: "false"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    userns_mode: keep-id
+
+networks:
+  re-net:
+    driver: bridge
+    name: re-net
+
+volumes:
+  re-samples:
+    name: re-samples
+  re-workspace:
+    name: re-workspace
+  re-ghidra-projects:
+    name: re-ghidra-projects
+  re-memini-data:
+    name: re-memini-data
+  re-memini-config:
+    name: re-memini-config
+  re-filebrowser-db:
+    name: re-filebrowser-db
+  re-filebrowser-cfg:
+    name: re-filebrowser-cfg

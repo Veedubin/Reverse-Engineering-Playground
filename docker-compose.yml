@@ -1,0 +1,212 @@
+# RE_Playground — multi-container deployment
+#
+# Usage:
+#   docker compose up -d          # start everything
+#   docker compose logs -f core   # tail core container
+#   docker compose down           # stop everything (volumes preserved)
+#
+# Topology:
+#   Browser ──► re-core (4096)        OpenCode web UI + agents
+#                  │
+#                  ├─► re-ghidra (8089)      Ghidra SRE
+#                  ├─► re-radare2 (9090)     radare2 + r2mcp + Wine
+#                  ├─► re-memini (5432)      memini-ai semantic memory
+#                  └─► re-files (8080)       FileBrowser /samples ingress
+#
+# File ingress flow:
+#   1. Open http://localhost:8080 (FileBrowser)
+#   2. Upload target.exe to /samples
+#   3. Open http://localhost:4096 (OpenCode)
+#   4. Ask agent: "analyze /samples/target.exe"
+#
+# Networks: all containers share the `re-net` bridge for inter-container comms.
+# Volumes:  `re-samples` is shared between filebrowser (write) and others (read).
+#           `re-memini-data` persists PostgreSQL across restarts.
+#           `re-memini-config` persists pgvector state.
+
+name: re-playground
+
+x-restart: &restart
+  restart: unless-stopped
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-number: "3"
+
+services:
+  # ----- The brain: OpenCode + 15 agents + lightweight MCP servers -----
+  core:
+    <<: [*restart, *logging]
+    build:
+      context: .
+      dockerfile: docker/core/Dockerfile
+    image: re-playground-core:latest
+    container_name: re-core
+    hostname: re-core
+    networks:
+      - re-net
+    ports:
+      - "4096:4096"   # OpenCode web UI
+    environment:
+      OPENCODE_SERVER_PASSWORD: "${OPENCODE_SERVER_PASSWORD:-changeme}"
+      OPENCODE_SERVER_USERNAME: "${OPENCODE_SERVER_USERNAME:-opencode}"
+      GHIDRA_MCP_HOST: re-ghidra
+      GHIDRA_MCP_PORT: "8089"
+      RADARE2_MCP_HOST: re-radare2
+      RADARE2_MCP_PORT: "9090"
+      MEMINI_AI_DIR: /opt/re-playground/.opencode/memini-ai
+      MEMINI_DB_URL: postgresql://memini:memini@re-memini:5432/memini
+      MEMINI_PROJECT_ID: reverse_engineering
+      OLLAMA_API_KEY: "${OLLAMA_API_KEY:-}"
+      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:-}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      GOOGLE_API_KEY: "${GOOGLE_API_KEY:-}"
+    volumes:
+      - re-samples:/samples:ro
+      - re-workspace:/workspace
+      - re-memini-config:/opt/re-playground/.opencode/memini-ai
+    depends_on:
+      ghidra:
+        condition: service_started
+      radare2:
+        condition: service_started
+      memini:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "-u", "opencode:${OPENCODE_SERVER_PASSWORD:-changeme}", "http://localhost:4096"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+  # ----- Ghidra SRE + 245-tool MCP bridge -----
+  ghidra:
+    <<: [*restart, *logging]
+    build:
+      context: .
+      dockerfile: docker/ghidra/Dockerfile
+    image: re-playground-ghidra:latest
+    container_name: re-ghidra
+    hostname: re-ghidra
+    networks:
+      - re-net
+    # Port NOT exposed to host — only core can reach it on the docker network
+    expose:
+      - "8089"
+    volumes:
+      - re-samples:/samples:ro
+      - re-workspace:/workspace
+      - re-ghidra-projects:/ghidra-projects
+    environment:
+      GHIDRA_MCP_PORT: "8089"
+    mem_limit: 4g
+    depends_on:
+      files:
+        condition: service_started
+
+  # ----- radare2 + rizin + r2mcp + Wine (Win32 PE debug) -----
+  radare2:
+    <<: [*restart, *logging]
+    build:
+      context: .
+      dockerfile: docker/radare2/Dockerfile
+    image: re-playground-radare2:latest
+    container_name: re-radare2
+    hostname: re-radare2
+    networks:
+      - re-net
+    expose:
+      - "9090"
+    volumes:
+      - re-samples:/samples:ro
+      - re-workspace:/workspace
+    environment:
+      R2MCP_PORT: "9090"
+    cap_add:
+      - SYS_PTRACE   # required for ptrace-based debug (Wine + gdb)
+    security_opt:
+      - seccomp:unconfined
+    depends_on:
+      files:
+        condition: service_started
+
+  # ----- memini-ai semantic memory (PostgreSQL + pgvector) -----
+  memini:
+    <<: [*restart, *logging]
+    image: pgvector/pgvector:pg16
+    container_name: re-memini
+    hostname: re-memini
+    networks:
+      - re-net
+    # Port NOT exposed — only core and re-memini-app (if added) can reach it
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_USER: memini
+      POSTGRES_PASSWORD: memini
+      POSTGRES_DB: memini
+    volumes:
+      - re-memini-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U memini"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+
+  # ----- FileBrowser: the ONLY desktop ingress for /samples -----
+  files:
+    <<: [*restart, *logging]
+    build:
+      context: .
+      dockerfile: docker/filebrowser/Dockerfile
+    image: re-playground-filebrowser:latest
+    container_name: re-files
+    hostname: re-files
+    networks:
+      - re-net
+    ports:
+      - "8080:8080"   # Web UI: http://localhost:8080
+    volumes:
+      - re-samples:/samples
+      - re-filebrowser-db:/database
+      - re-filebrowser-cfg:/config
+    environment:
+      FB_NOAUTH: "false"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+networks:
+  re-net:
+    driver: bridge
+    name: re-net
+
+volumes:
+  # Shared between files (write) and core/ghidra/radare2 (read-only)
+  re-samples:
+    name: re-samples
+  # Where core writes working files (analyses, dumps, notes)
+  re-workspace:
+    name: re-workspace
+  # Ghidra's per-project state
+  re-ghidra-projects:
+    name: re-ghidra-projects
+  # PostgreSQL data (survives container restarts)
+  re-memini-data:
+    name: re-memini-data
+  # memini-ai server config + cached vectors
+  re-memini-config:
+    name: re-memini-config
+  # FileBrowser's own state (separate from /samples)
+  re-filebrowser-db:
+    name: re-filebrowser-db
+  re-filebrowser-cfg:
+    name: re-filebrowser-cfg

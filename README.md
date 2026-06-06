@@ -75,6 +75,7 @@ It ships as a pre-configured [OpenCode](https://opencode.ai) project built on th
   - [Function Documentation Workflow (Ghidra V5)](#function-documentation-workflow-ghidra-v5)
   - [Cross-Binary Matching](#cross-binary-matching)
   - [Dynamic Analysis (Live Debugging)](#dynamic-analysis-live-debugging)
+- [Container Deployment](#container-deployment)
 - [Safety and Sandboxing](#safety-and-sandboxing)
 - [CLI Reference](#cli-reference)
   - [setup.py — Configuration Orchestrator](#setuppy--configuration-orchestrator)
@@ -130,6 +131,11 @@ That's it. You now have a multi-agent RE workstation with a curated methodology 
 
 - **Ghidra MCP** — 245 MCP tools bridging the full Ghidra API: decompilation, disassembly, data flow analysis, P-code emulation, live debugging, cross-binary matching
 - **radare2-mcp** — Native C MCP server for fast binary triage, disassembly, string extraction, section mapping, r2js scripting
+- **revula** — 116-tool RE MCP server: PE/ELF/Mach-O parsing, YARA, Capa ATT&CK mapping, .NET IL, Frida injection, GDB debugging, Android RE, ROP/heap exploit dev, deobfuscation ([president-xd/revula](https://github.com/president-xd/revula))
+- **ILSpyMcpServer** — Decompile .NET assemblies (C#/VB.NET) to source via natural language
+- **Detect-It-Easy (diec)** — Identify packer / compiler / cryptor on PE/ELF/Mach-O
+- **YARA** — Pattern-based malware identification (VirusTotal's rule engine)
+- **pefile** — Python PE parser used by revula and custom RE scripts
 - **JADX** — APK/DEX → Java source decompiler
 - **Apktool** — APK decode/rebuild with smali support
 - **dex2jar / baksmali / smali** — DEX ↔ JAR conversion and smali assembly/disassembly
@@ -170,7 +176,76 @@ That's it. You now have a multi-agent RE workstation with a curated methodology 
 - **RE-Playbook.md** — curated, trust-weighted methodology wiki with tools, techniques, patterns, and appendices
 - **AGENTS.md** — full agent roster, routing matrix, protocol specification, governance rules
 - **CONTEXT.md** — project context, environment details, MCP server config, model selection guide, RE conventions, troubleshooting
+- **docs/learn-more.md** — curated reading list (3-5 articles per tool) with GitHub links for every tool
+- **docs/container.md** — multi-container deployment guide (Docker / Podman) with file ingress + LAN access patterns
+- **docs/windows-re/tools-and-mcp-servers.md** — Windows PE / .NET RE research and recommendations
 - **.env.example** — annotated template documenting every environment variable with descriptions and where to get the values
+
+---
+
+## Container Deployment
+
+For a self-contained, browser-only RE workstation, RE_Playground ships with a multi-container deployment. The agents stay inside containers; you only touch it from the browser. Desktop files are uploaded through a dedicated FileBrowser container that has no other network access.
+
+### Architecture (5 containers)
+
+```
+  Browser
+     │
+   :4096 HTTP       OpenCode web UI + 7 enabled MCP servers
+   :8080 HTTP       FileBrowser (sample ingress — only one with :rw on /samples)
+     │
+   re-net (bridge) — shared network between all 5 containers
+     │
+   ┌────┴────┬────────┬──────────┐
+   ▼         ▼        ▼          ▼
+re-ghidra  re-radare2  re-memini  re-files
+:8089 MCP  :9090 MCP   pgvector  filebrowser
+Ghidra SRE  r2mcp+Wine  memory    (same /samples vol, :ro from others)
++ 245 tools
+```
+
+### Quick start
+
+```bash
+git clone https://github.com/Veedubin/Reverse-Engineering-Playground.git
+cd Reverse-Engineering-Playground
+export OPENCODE_SERVER_PASSWORD="$(openssl rand -hex 16)"
+docker compose up -d --build        # or: podman-compose up -d --build
+# Open http://localhost:4096 (OpenCode)
+# Open http://localhost:8080 (FileBrowser — upload target.exe here)
+```
+
+### Why multi-container (not one fat image)?
+
+- **Smaller images** — Ghidra's 400 MB JVM doesn't ship in the core image
+- **Independent scaling** — `docker compose up --scale ghidra=2` if you need two Ghidra instances
+- **Tighter isolation** — Wine's `SYS_PTRACE` is only on the r2 container; if r2 is pwned, core/ghidra/memini are untouched
+- **Cleaner security model** — only `re-files` has write access to `/samples`; everything else mounts `:ro`
+- **Runtime choice** — the same compose file works under Docker **and** rootless Podman
+
+### File ingress (the security bit)
+
+The desktop cannot reach the agents directly. The flow is:
+
+1. You open `http://localhost:8080` (FileBrowser)
+2. Upload `target.exe` to FileBrowser's web UI
+3. FileBrowser writes it to the `re-samples` named volume
+4. All 4 other containers see the file appear at their own `/samples` mount
+5. You tell the agent: "analyze /samples/target.exe"
+6. Agent runs `r2`, `ghidra`, `diec`, `yara` against the file — all inside the container network
+
+The agents **cannot** read your home directory, `~/.ssh`, browser cookies, or anything else on your host. Even if a malicious PE exploits Frida and escapes its container, your filesystem is on a different Docker volume entirely.
+
+### LAN access
+
+Three options, in order of recommendation:
+
+1. **Tailscale** (zero-config WireGuard mesh) — install on host + every client, reach the UI at `<host-tailscale-ip>:4096`
+2. **nginx + Let's Encrypt** (public HTTPS with a real domain) — full reverse-proxy config in `docs/container.md`
+3. **`0.0.0.0` bind** (trusted LAN only) — change `"127.0.0.1:4096:4096"` to `"4096:4096"` in `docker-compose.yml`
+
+See **[`docs/container.md`](docs/container.md)** for the full guide: systemd integration, GPU passthrough, persistent volume backups, port troubleshooting, GPU/NVIDIA setup, and Podman rootless specifics.
 
 ---
 
@@ -253,11 +328,11 @@ That's it. You now have a multi-agent RE workstation with a curated methodology 
 
 #### Tool Groups
 
-The catalog is organized into 5 groups. All 18 items are checked by default in the TUI.
+The catalog is organized into 5 groups. All 23 items are checked by default in the TUI.
 
 | Group | Tools | Count |
 |---|---|---|
-| **RE Core** | JADX, Apktool, dex2jar, baksmali, smali, Frida tools, radare2, Binwalk, Ghidra | 9 |
+| **RE Core** | JADX, Apktool, dex2jar, baksmali, smali, Frida tools, radare2, Binwalk, Ghidra, **revula, ILSpyMcpServer, .NET SDK 9+, diec, YARA, pefile** | 15 |
 | **Runtime** | OpenJDK 17+ (required by Ghidra, JADX, apktool) | 1 |
 | **Android** | Android Platform Tools (adb + fastboot) | 1 |
 | **Network** | mitmproxy, Wireshark | 2 |
@@ -276,6 +351,12 @@ The catalog is organized into 5 groups. All 18 items are checked by default in t
 | **radare2** | Native binary analysis framework | `pacman` / `apt` / `brew` |
 | **Binwalk** | Firmware analysis + filesystem extraction | `pacman` / `apt` / `brew` |
 | **Ghidra** | NSA's Software Reverse Engineering framework | Manual (tarball) on Linux; `brew --cask` on macOS |
+| **revula (MCP server)** | 116-tool all-in-one RE backend (PE/ELF/Mach-O, YARA, Capa, .NET, Frida, GDB, Android) | `uv tool install 'revula[full]'` (all platforms) |
+| **ILSpyMcpServer (.NET decompiler)** | Decompile .NET assemblies to C#/VB.NET | `dotnet tool install -g ILSpyMcp.Server` (needs .NET SDK 9+) |
+| **.NET SDK 9+** | Runtime for ilspycmd | Arch: AUR; Debian: `dotnet-install.sh`; macOS: `brew --cask dotnet-sdk` |
+| **diec (Detect It Easy)** | Identify packer/compiler/cryptor on PE/ELF/Mach-O | `pacman` / `apt` / `brew` (Kali has it packaged) |
+| **YARA** | Pattern-based malware identification | `pacman` / `apt` / `brew` |
+| **pefile (Python)** | Python PE parser library | `pipx install pefile` (or `pip install --user pefile`) |
 | **OpenJDK 17+** | Java runtime required by Ghidra, JADX, apktool | `pacman` / `apt` / `brew` |
 | **adb + fastboot** | Android Debug Bridge + fastboot | `pacman` / `apt` / `brew` |
 | **mitmproxy** | Interactive HTTPS intercepting proxy | `pacman` / `apt` / `brew` / `pip` |
@@ -403,12 +484,15 @@ RE_Playground ships with 15 specialist agents, each assigned a model optimized f
 
 ## MCP Server Integration
 
-RE_Playground comes pre-configured with 8 MCP servers in `.opencode/opencode.json`. Four are enabled by default; four are disabled but present.
+RE_Playground comes pre-configured with **10 MCP servers** in `.opencode/opencode.json`. Seven are enabled by default; three are disabled but present.
 
 | Server | Status | Purpose | Transport |
 |---|---|---|---|
 | **ghidra-mcp** | ✅ enabled | 245 tools for Ghidra headless RE | stdio (Python bridge) |
 | **radare2-mcp** | ✅ enabled | Fast binary triage and analysis | stdio (r2pipe) |
+| **revula** | ✅ enabled | 116-tool all-in-one RE server (PE/ELF/Mach-O, YARA, Capa, .NET, Frida, GDB, Android, exploit dev) | stdio (Python) |
+| **ilspy-mcp** | ✅ enabled | Decompile .NET assemblies to C#/VB.NET | stdio (.NET global tool) |
+| **die-mcp** | ✅ enabled | Detect packer / compiler / cryptor via Detect-It-Easy | stdio (Python) |
 | **memini-ai-dev** | ✅ enabled | PostgreSQL + pgvector semantic memory | stdio (Python FastMCP) |
 | **searxng** | ✅ enabled | Web search for research | HTTP |
 | **github-mcp** | ❌ disabled | GitHub API (PRs, issues, repos) | HTTP |
@@ -456,6 +540,42 @@ A native C MCP server using the radare2 API via r2pipe, providing:
 | **Modes** | Stdio MCP, HTTP server (`-H <port>`), r2 core plugin |
 
 radare2-mcp is optimized for **fast binary triage** — quick disassembly, string extraction, and import/export review before deeper analysis in Ghidra.
+
+### revula (116 tools)
+
+[revula](https://github.com/president-xd/revula) is the single most powerful RE tool added to RE_Playground. One `pip install` and your agents have:
+
+- **Static analysis** (8 tools): PE/ELF/Mach-O via LIEF+pefile, multi-backend disassembly (Capstone/r2/objdump), string extraction with 17 classifier patterns, Shannon entropy + sliding-window packing detection, symbol extraction (DWARF/PDB/LIEF), YARA scanning, **Capa** (ATT&CK/MBC mapping), Ghidra/RetDec decompilation
+- **Dynamic analysis** (29 tools): GDB/MI debug, LLDB, Frida injection, DynamoRIO + Frida Stalker code coverage
+- **Android RE** (24 tools): APK parsing, DEX analysis, jadx/apktool integration, ADB bridge, Frida for Android (root bypass, SSL pinning bypass), MobSF/Quark-Engine scanners
+- **Cross-platform** (7 tools): Rizin, GDB enhanced (heap/ROP/checksec), QEMU user/system emulation
+- **Exploit dev** (11 tools): ROP chain builder, heap exploitation (tcache/fastbin/safe-linking), libc database, ASLR defeat, one-gadget finder
+- **Anti-analysis** (2 tools): anti-debug/VM detection + bypass script generation
+- **Malware triage** (4 tools): hash + IoC extraction, sandbox queries (VT/Hybrid Analysis), YARA generation, C2 config extraction
+- **Firmware** (3 tools): binwalk extraction, CVE scanning, base address recovery
+- **Protocol** (3 tools): tshark PCAP analysis (8 actions), binary protocol dissection, mutation fuzzing
+- **Unpacking** (4 tools): UPX/Themida/VMProtect detection, dynamic unpacking via Frida
+- **Deobfuscation** (3 tools): XOR/ROT/Base64/RC4 string recovery, OLLVM CFF detection
+- **Symbolic** (4 tools): angr, Triton DSE
+- **Binary formats** (4 tools): APK/DEX, .NET IL, Java class, WebAssembly
+- **Utilities** (8 tools): hex tools, crypto (MD5/SHA/TLSH/ssdeep), binary patching, PCAP analysis
+
+After install, an agent can answer "analyze /samples/target.exe" with a single call sequence: `re_pe_elf` → `re_strings` → `re_entropy` → `re_yara_scan` → `re_capa_scan` → `re_gdb` for dynamic. See [docs/learn-more.md](docs/learn-more.md) for the full tool list and curated tutorials.
+
+### ILSpyMcpServer (.NET decompiler)
+
+For Windows binaries built on .NET (C#, VB.NET, F#), ILSpyMcpServer ([github](https://github.com/bivex/ILSpy-Mcp)) lets agents ask:
+
+- *"Decompile the String class from System.Runtime.dll"*
+- *"List all types in Calculator.dll"*
+- *"Find the Authenticate method"*
+- *"Show me the type hierarchy for ProductService"*
+
+Backed by [ILSpy](https://github.com/icsharpcode/ILSpy), the standard open-source .NET decompiler. Install with `dotnet tool install -g ILSpyCmd` and `dotnet tool install -g ILSpyMcp.Server`. Requires .NET SDK 9+ (also in `install.py`).
+
+### D.I.E-MCP (Detect It Easy wrapper)
+
+[D.I.E-MCP](https://github.com/lazy-importer/D.I.E-MCP) wraps the `diec` CLI of [Detect-It-Easy](https://github.com/horsicq/Detect-It-Easy) — the most thorough packer/compiler/cryptor signature database in the world. Agents can ask "what packer was used on /samples/x.exe?" and get a structured answer (e.g. `UPX 3.96`, `Themida 3.x`, `MSVC 2022`). Useful as a quick first-pass triage before running revula's deeper static analysis.
 
 ### memini-ai (Semantic Memory)
 
@@ -1015,12 +1135,20 @@ RE_Playground is built on several open-source projects:
 | [memini-ai](https://github.com/Veedubin/memini-ai-dev) | Semantic memory server (PostgreSQL + pgvector) | MIT |
 | [Ghidra MCP](https://github.com/bethington/ghidra-mcp) | 245-tool MCP bridge for Ghidra | Apache 2.0 |
 | [radare2-mcp](https://github.com/radareorg/radare2-mcp) | radare2 MCP server | LGPL 3.0 |
+| [revula](https://github.com/president-xd/revula) | 116-tool all-in-one RE MCP server | GPL |
+| [ILSpyMcpServer](https://github.com/bivex/ILSpy-Mcp) | .NET decompiler MCP wrapper | MIT |
+| [ILSpy](https://github.com/icsharpcode/ILSpy) | Underlying .NET decompiler engine | MIT |
+| [D.I.E-MCP](https://github.com/lazy-importer/D.I.E-MCP) | Detect It Easy MCP wrapper | MIT |
+| [Detect-It-Easy](https://github.com/horsicq/Detect-It-Easy) | Packer / compiler / cryptor identification | MIT |
+| [YARA](https://github.com/VirusTotal/yara) | Pattern-based malware identification | Apache 2.0 (binding) / BSD (CLI) |
+| [pefile](https://github.com/erocarrera/pefile) | Python PE parser | MIT |
 | [Ghidra](https://ghidra-sre.org/) | NSA Software Reverse Engineering framework | Apache 2.0 |
 | [radare2](https://radare.org/) | UNIX-like reverse engineering framework | LGPL 3.0 |
 | [JADX](https://github.com/skylot/jadx) | DEX to Java decompiler | Apache 2.0 |
 | [Frida](https://frida.re/) | Dynamic instrumentation toolkit | wxWindows Library Licence |
 | [questionary](https://github.com/tmbo/questionary) | Python TUI library | MIT |
 | [re-universe](https://github.com/bethington/re-universe) | Ghidra BSim PostgreSQL platform for binary similarity | Apache 2.0 |
+| [FileBrowser Quantum](https://github.com/filebrowser/filebrowser) | Web file manager (Docker ingress) | Apache 2.0 |
 
 **Resource repositories** (Ghidra and radare2 scripts worth checking before building your own):
 
