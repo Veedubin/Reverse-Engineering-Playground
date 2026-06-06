@@ -1,8 +1,8 @@
-# RE_Playground
+# Reverse Engineering Playground
 
 <div align="center">
 
-**A self-contained, AI-assisted reverse engineering laboratory.**
+**A self-contained, AI-assisted reverse engineering laboratory for [OpenCode](https://opencode.ai).**
 
 15 specialist agents &bull; Ghidra MCP (245 tools) &bull; radare2-mcp &bull; semantic memory &bull; cross-distro installer &bull; multi-provider LLM support
 
@@ -10,9 +10,41 @@
 
 ---
 
+## What is Reverse Engineering Playground?
+
+Reverse Engineering Playground (tagline: `RE_Playground`) is a drop-in reverse engineering workspace for [OpenCode](https://opencode.ai) that combines **15 specialized AI agents** with **265+ MCP tools** for binary analysis, decompilation, dynamic instrumentation, and semantic documentation.
+
+It ships as a pre-configured [OpenCode](https://opencode.ai) project built on the [Boomerang v3](https://github.com/Veedubin/Boomerang-v3) OpenCode plugin (multi-agent orchestration) and the [memini-ai](https://github.com/Veedubin/memini-ai-dev) semantic memory server. Clone it, run the installer, and you have a multi-agent RE workstation with a curated methodology wiki and trust-weighted memory — no vendor binaries shipped, everything pulled from your distro's package manager, Homebrew, pip, or npm.
+
+**You bring a binary. The agents bring everything else.**
+
+- Load an APK, ELF, or PE into Ghidra or radare2
+- Ask the architect agent to plan an analysis strategy
+- Watch agents decompile, annotate, cross-reference, and document — automatically
+- All findings are saved to a trust-weighted semantic memory that improves with every session
+
+### What can you do with it?
+
+| Capability | How |
+|---|---|
+| **APK / DEX analysis** | Decompile to Java source (JADX), decode/rebuild (Apktool), DEX→JAR conversion, smali disassembly/reassembly |
+| **Native binary reverse engineering** | ARM/x86/ELF/PE analysis via Ghidra (NSA's SRE framework) and radare2, with AI-guided navigation |
+| **Dynamic instrumentation** | Frida for runtime hooking, tracing, and memory manipulation |
+| **Network protocol analysis** | mitmproxy for HTTPS interception, Wireshark for packet capture |
+| **Firmware extraction** | Binwalk for carving filesystems, kernels, and bootloaders from firmware images |
+| **Cross-binary documentation** | SHA-256 function hashing propagates analysis across binary versions |
+| **Live debugging** | Ghidra debugger with breakpoints, register inspection, memory watchpoints, function tracing |
+| **P-code emulation** | Isolated function execution for understanding behavior without running the target |
+| **Semantic search** | PostgreSQL + pgvector memory indexed by embedding, searchable by concept |
+| **Trust-weighted knowledge** | Every finding has a trust score; used findings get promoted, wrong findings get corrected |
+| **Knowledge graph** | Entities and relationships tracked across sessions — inference paths between concepts |
+| **Multi-provider LLM** | 5 providers pre-configured (Ollama Cloud, OpenRouter, Anthropic, OpenAI, Google AI) |
+| **Persona customization** | Every agent can be given a specific focus area via CLI or in-app skill |
+
+---
+
 ## Table of Contents
 
-- [What is RE_Playground?](#what-is-re_playground)
 - [Quick Start](#quick-start)
 - [Features](#features)
 - [Architecture](#architecture)
@@ -51,39 +83,6 @@
 - [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
-
----
-
-## What is RE_Playground?
-
-RE_Playground is a drop-in reverse engineering workspace that combines **15 specialized AI agents** with **265+ MCP tools** for binary analysis, decompilation, dynamic instrumentation, and semantic documentation. It's built on the [Boomerang v3](https://github.com/Veedubin/Boomerang-v3) multi-agent orchestration framework and the [memini-ai](https://github.com/Veedubin/memini-ai-dev) semantic memory server.
-
-**You bring a binary. The agents bring everything else.**
-
-- Load an APK, ELF, or PE into Ghidra or radare2
-- Ask the architect agent to plan an analysis strategy
-- Watch agents decompile, annotate, cross-reference, and document — automatically
-- All findings are saved to a trust-weighted semantic memory that improves with every session
-
-No vendor binaries are shipped. Every tool is pulled from your distro's package manager, Homebrew, pip, or npm by the included cross-platform installer.
-
-### What can you do with it?
-
-| Capability | How |
-|---|---|
-| **APK / DEX analysis** | Decompile to Java source (JADX), decode/rebuild (Apktool), DEX→JAR conversion, smali disassembly/reassembly |
-| **Native binary reverse engineering** | ARM/x86/ELF/PE analysis via Ghidra (NSA's SRE framework) and radare2, with AI-guided navigation |
-| **Dynamic instrumentation** | Frida for runtime hooking, tracing, and memory manipulation |
-| **Network protocol analysis** | mitmproxy for HTTPS interception, Wireshark for packet capture |
-| **Firmware extraction** | Binwalk for carving filesystems, kernels, and bootloaders from firmware images |
-| **Cross-binary documentation** | SHA-256 function hashing propagates analysis across binary versions |
-| **Live debugging** | Ghidra debugger with breakpoints, register inspection, memory watchpoints, function tracing |
-| **P-code emulation** | Isolated function execution for understanding behavior without running the target |
-| **Semantic search** | PostgreSQL + pgvector memory indexed by embedding, searchable by concept |
-| **Trust-weighted knowledge** | Every finding has a trust score; used findings get promoted, wrong findings get corrected |
-| **Knowledge graph** | Entities and relationships tracked across sessions — inference paths between concepts |
-| **Multi-provider LLM** | 5 providers pre-configured (Ollama Cloud, OpenRouter, Anthropic, OpenAI, Google AI) |
-| **Persona customization** | Every agent can be given a specific focus area via CLI or in-app skill |
 
 ---
 
