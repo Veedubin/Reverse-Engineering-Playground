@@ -7,7 +7,11 @@
 
 ## Project Overview
 
-RE_Playground is a self-contained, AI-assisted reverse engineering laboratory. Drop it anywhere, install the toolchain with the included cross-platform installer, and you have a multi-agent RE workstation with 15 specialist personas, 265+ MCP tools, and a curated methodology wiki.
+RE_Playground is a self-contained, AI-assisted reverse engineering laboratory. Drop it anywhere, install the toolchain with the included cross-platform installer, and you have a multi-agent RE workstation with 15 specialist personas, 6 MCP servers enabled by default (revula opt-in), 23 tools across 5 groups, and a curated methodology wiki.
+
+> **Current release**: v0.2.4 (commit `89c07d4`). All 4 build-containers CI jobs green.
+> See `TASKS.md` for task state, `HANDOFF.md` for session handoff, and
+> `docs/v0.3.0-proposal.md` for the distroless + MCP Gateway refactor plan.
 
 Core components:
 - **Ghidra MCP** (245 tools) — Decompilation, disassembly, data flow analysis, debugger integration
