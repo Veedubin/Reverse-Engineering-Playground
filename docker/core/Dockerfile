@@ -63,7 +63,11 @@ RUN git clone --depth 1 https://github.com/president-xd/revula.git /opt/revula &
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 9.0 --install-dir /usr/share/dotnet
 ENV DOTNET_ROOT=/usr/share/dotnet
 ENV PATH="${PATH}:/usr/share/dotnet:/root/.dotnet/tools"
-RUN /usr/share/dotnet/dotnet tool install -g ilspycmd
+# Pin ilspycmd 8.2.0.7535 — the latest 10.x NuGet package is broken on
+# .NET 9 SDK (missing DotnetToolSettings.xml). 8.2.0.7535 is the last
+# working version we tested.
+# See: https://www.nuget.org/packages/ilspycmd (version history)
+RUN /usr/share/dotnet/dotnet tool install -g ilspycmd --version 8.2.0.7535
 
 # Node tooling
 RUN npm install -g @anthropic-ai/sdk
