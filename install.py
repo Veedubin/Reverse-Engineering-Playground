@@ -166,6 +166,12 @@ class Tool:
     # Install function for this distro family; raises on failure.
     # Returns a short status string ("installed", "skipped", etc.)
     installers: dict[str, Callable[["Tool"], str]] = field(default_factory=dict)
+    # If True, the TUI will leave this tool UNCHECKED by default.
+    # Use for tools with licensing concerns (GPL), heavy install footprints
+    # (angr, semgrep), or limited additional value beyond what's already
+    # provided by other tools in the catalog. Users can still opt in
+    # manually.
+    opt_in: bool = False
 
     def is_installed(self) -> bool:
         return shutil.which(self.bin) is not None
@@ -303,13 +309,14 @@ def build_catalog() -> list[Tool]:
     tools: list[Tool] = []
 
     # Helper to keep the data declarations readable
-    def add(key, name, group, desc, bin_, **installers):
+    def add(key, name, group, desc, bin_, opt_in=False, **installers):
         t = Tool(
             key=key,
             name=name,
             group=group,
             description=desc,
             bin=bin_,
+            opt_in=opt_in,
         )
         t.installers = installers
         tools.append(t)
@@ -541,12 +548,23 @@ def build_catalog() -> list[Tool]:
     # ===== Windows / .NET RE =====
     # revula is not on PyPI — install from source.
     # https://github.com/president-xd/revula
+    #
+    # OPT-IN: revula is GPL-3.0-or-later (incompatible with our MIT
+    # license — we don't ship it, just call into it). It also has ~100
+    # thin wrapper tools and a heavy [full] install (angr ~2 GB,
+    # semgrep ~250 MB, frida, pwntools, androguard, etc.). Ghidra MCP
+    # + radare2-mcp provide 300+ deeper, focused tools. Enable revula
+    # only if you specifically need: Android RE workflows, exploit
+    # development (ROP chain builder, heap exploitation, libc database),
+    # dynamic analysis (GDB/LLDB/Frida adapters), or tshark-based
+    # protocol analysis.
     add(
         "revula",
         "revula (MCP server)",
         "RE Core",
         "All-in-one RE MCP server (PE/ELF/Mach-O, YARA, Capa, .NET IL, Frida, GDB, Android, exploit dev) — installed from source",
         "revula",
+        opt_in=True,
         arch=lambda t: _git_pip_install(
             "https://github.com/president-xd/revula.git",
             extras="[full]",
@@ -691,8 +709,13 @@ def select_tools(tools: list[Tool]) -> list[Tool] | None:
     for group, group_tools in groups.items():
         choices.append(Choice(f"── {group} ──", value=None, disabled=True))
         for t in group_tools:
+            # opt_in=True tools are unchecked by default; the user must
+            # explicitly opt into them. The label gets a [opt-in] tag
+            # so the user knows why it's unchecked.
             label = f"{t.name:<28}  {t.description}"
-            choices.append(Choice(title=label, value=t, checked=True))
+            if t.opt_in:
+                label += "  [opt-in]"
+            choices.append(Choice(title=label, value=t, checked=not t.opt_in))
 
     selected = questionary.checkbox(
         "Select tools to install (space=toggle, enter=confirm):",

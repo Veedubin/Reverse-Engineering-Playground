@@ -1,0 +1,74 @@
+# RE_Playground Core — OpenCode + agents
+# v0.3.0: slimmest possible image. Just Node.js 22 + OpenCode + the
+# 15 agent .md files. The 9 MCP servers (revula, radare2-mcp, ghidra-mcp,
+# ilspy-mcp, memini-ai-dev, etc.) are now in their own containers;
+# OpenCode talks to them via the docker/mcp-gateway broker (PR 2/3).
+#
+# Pattern: multi-stage build that lands in
+# gcr.io/distroless/nodejs22-debian13:nonroot.
+# - Stage 1 (build): node:22-slim — has gcc/g++/python/make so OpenCode
+#   can compile any native npm deps it pulls in. NOT shipped.
+# - Stage 2 (runtime): distroless/nodejs22-debian13:nonroot — just
+#   Node.js 22 + ca-certs + nonroot user. No shell, no apt, no
+#   package manager.
+
+# ----- Stage 1: build -----
+# IMPORTANT: distroless nodejs22-debian13 ships Node.js 22. To avoid
+# ABI mismatch on any native npm deps, we use node:22-bookworm here
+# (matches Debian 13 = trixie). bookworm is the variant that has curl
+# and wget preinstalled, so the OpenCode install script works.
+# See: https://github.com/GoogleContainerTools/distroless/blob/main/nodejs/README.md
+FROM node:22-bookworm AS build
+
+# OpenCode's install script is just `curl | bash` to /root/.opencode/bin/.
+# We do it the same way to match the install.py path.
+RUN npm install -g @anthropic-ai/sdk 2>&1 | tail -2 && \
+    curl -fsSL https://opencode.ai/install | bash 2>&1 | tail -5 && \
+    ls -la /root/.opencode/bin/
+
+# Copy the application source from the build stage. We do this in the
+# build stage (which has bash) and create the persistent dirs there too,
+# then COPY them to the runtime (which has no shell).
+WORKDIR /opt/re-playground
+COPY . /opt/re-playground
+RUN mkdir -p /samples /workspace /memories && \
+    chmod -R a+rx /opt/re-playground/.opencode
+
+# ----- Stage 2: distroless runtime -----
+FROM gcr.io/distroless/nodejs22-debian13:nonroot
+
+# OCI labels
+LABEL org.opencontainers.image.title="RE_Playground Core"
+LABEL org.opencontainers.image.description="OpenCode web + 15 agent definitions on distroless Node 22"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.source="https://github.com/Veedubin/Reverse-Engineering-Playground"
+
+# Copy the application source from the build stage
+WORKDIR /opt/re-playground
+COPY --from=build /opt/re-playground /opt/re-playground
+
+# Copy the OpenCode binary (installed in the build stage at /root/.opencode/bin/)
+COPY --from=build /root/.opencode/bin/opencode /usr/local/bin/opencode
+
+# Copy the Anthropic SDK (we install -g'd it in the build stage, so it's
+# at /usr/local/lib/node_modules/@anthropic-ai/sdk)
+COPY --from=build /usr/local/lib/node_modules/@anthropic-ai /usr/local/lib/node_modules/@anthropic-ai
+ENV RE_SAMPLES_DIR=/samples
+ENV RE_WORKSPACE_DIR=/workspace
+
+# Default port for opencode web
+ENV OPENCODE_SERVER_PORT=4096
+ENV OPENCODE_SERVER_HOSTNAME=0.0.0.0
+
+# OPENCODE_SERVER_PASSWORD is set at runtime via docker-compose / -e
+# (not hardcoded here, so Buildx doesn't flag it as a hardcoded secret).
+# docker-compose.yml passes the user's ${OPENCODE_SERVER_PASSWORD}.
+
+# distroless images run as uid 65532 (nonroot) by default.
+USER nonroot:nonroot
+
+EXPOSE 4096 8089
+
+# Default: launch opencode web (browser UI) bound to 0.0.0.0
+ENTRYPOINT ["opencode"]
+CMD ["web", "--hostname", "0.0.0.0", "--port", "4096"]

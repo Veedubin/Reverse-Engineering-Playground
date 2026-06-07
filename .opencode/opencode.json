@@ -115,7 +115,8 @@
       "command": [
         "revula"
       ],
-      "enabled": true
+      "enabled": false,
+      "_comment": "OPT-IN: GPL-3.0-or-later (incompatible with our MIT). Most of its 116 tools are thin wrappers; Ghidra MCP (245) + radare2-mcp (60) cover static + disassembly deeply. Enable only if you need exploit dev (ROP, heap, libc DB), Android RE, or dynamic analysis (GDB/LLDB/Frida adapters). Run ./install.py and check 'revula' to install."
     },
     "ilspy-mcp": {
       "type": "local",
