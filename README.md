@@ -239,7 +239,7 @@ The desktop cannot reach the agents directly. The flow is:
 3. FileBrowser writes it to the `re-samples` named volume
 4. All 4 other containers see the file appear at their own `/samples` mount
 5. You tell the agent: "analyze /samples/target.exe"
-6. Agent runs `r2`, `ghidra`, `diec`, `yara` against the file — all inside the container network
+6. Agent runs `r2`, `ghidra`, `yara` against the file — all inside the container network
 
 The agents **cannot** read your home directory, `~/.ssh`, browser cookies, or anything else on your host. Even if a malicious PE exploits Frida and escapes its container, your filesystem is on a different Docker volume entirely.
 
@@ -498,7 +498,6 @@ RE_Playground comes pre-configured with **10 MCP servers** in `.opencode/opencod
 | **radare2-mcp** | ✅ enabled | Fast binary triage and analysis | stdio (r2pipe) |
 | **revula** | ✅ enabled | 116-tool all-in-one RE server (PE/ELF/Mach-O, YARA, Capa, .NET, Frida, GDB, Android, exploit dev) | stdio (Python) |
 | **ilspy-mcp** | ✅ enabled | Decompile .NET assemblies to C#/VB.NET | stdio (.NET global tool) |
-| **die-mcp** | ✅ enabled | Detect packer / compiler / cryptor via Detect-It-Easy | stdio (Python) |
 | **memini-ai-dev** | ✅ enabled | PostgreSQL + pgvector semantic memory | stdio (Python FastMCP) |
 | **searxng** | ✅ enabled | Web search for research | HTTP |
 | **github-mcp** | ❌ disabled | GitHub API (PRs, issues, repos) | HTTP |
@@ -579,9 +578,11 @@ For Windows binaries built on .NET (C#, VB.NET, F#), ILSpyMcpServer ([github](ht
 
 Backed by [ILSpy](https://github.com/icsharpcode/ILSpy), the standard open-source .NET decompiler. Install with `dotnet tool install -g ILSpyCmd` and `dotnet tool install -g ILSpyMcp.Server`. Requires .NET SDK 9+ (also in `install.py`).
 
-### D.I.E-MCP (Detect It Easy wrapper)
+### D.I.E-MCP (Detect It Easy wrapper) — optional
 
-[D.I.E-MCP](https://github.com/lazy-importer/D.I.E-MCP) wraps the `diec` CLI of [Detect-It-Easy](https://github.com/horsicq/Detect-It-Easy) — the most thorough packer/compiler/cryptor signature database in the world. Agents can ask "what packer was used on /samples/x.exe?" and get a structured answer (e.g. `UPX 3.96`, `Themida 3.x`, `MSVC 2022`). Useful as a quick first-pass triage before running revula's deeper static analysis.
+[D.I.E-MCP](https://github.com/lazy-importer/D.I.E-MCP) wraps the `diec` CLI of [Detect-It-Easy](https://github.com/horsicq/Detect-It-Easy) — the most thorough packer/compiler/cryptor signature database in the world. Agents can ask "what packer was used on /samples/x.exe?" and get a structured answer (e.g. `UPX 3.96`, `Themida 3.x`, `MSVC 2022`).
+
+**Why not enabled by default:** `diec` has no prebuilt Linux CLI on GitHub releases (only the GUI for Windows). On Arch Linux it's packaged as `detect-it-easy`; on macOS via `brew`. On Debian/Ubuntu you'd need to build from source. Since the multi-container stack runs Ubuntu 24.04, `die-mcp` is **not** enabled out of the box. To use it on a platform where `diec` is available, clone the MCP repo and add the `die-mcp` block back to `opencode.json` manually.
 
 ### memini-ai (Semantic Memory)
 
@@ -1004,7 +1005,7 @@ Run with no arguments for a summary of available subcommands.
 ### install.py — Toolchain Installer
 
 ```bash
-./install.py              # Interactive TUI (all 18 tools checked by default)
+./install.py              # Interactive TUI (all 23 tools checked by default)
 ./install.py --yes        # Non-interactive: install everything available
 ./install.py --check      # Dry-run: report currently installed/missing/manual status
 ./install.py --list       # Print the tool catalog with descriptions

@@ -17,16 +17,20 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV OPENCODE_SERVER_PORT=4096
 ENV OPENCODE_SERVER_HOSTNAME=0.0.0.0
 
-# System packages — minimal: just what opencode + python agents need
+# System packages — minimal: just what opencode + python agents need.
+# NB: `detect-it-easy` (the GUI Debian package) and `wine-gecko` /
+# `wine-mono` are NOT in Ubuntu 24.04 (noble) — they were removed in
+# jammy. We get DIE functionality from the `diec` CLI installed via
+# pip below, and Wine's Gecko/Mono are now bundled in the wine package
+# itself or installed by wine on first run.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates curl git python3 python3-pip python3-venv \
         nodejs npm \
         binutils file xxd upx-ucl \
         yara \
-        detect-it-easy \
         mono-runtime mono-utils mono-devel \
         default-jre-headless \
-        wine wine64 wine-gecko wine-mono \
+        wine wine64 \
         tini \
     && rm -rf /var/lib/apt/lists/*
 
@@ -71,7 +75,9 @@ ENV RE_WORKSPACE_DIR=/workspace
 ENV MEMINI_AI_DIR=/opt/re-playground/.opencode/memini-ai
 ENV MEMINI_DB_URL=postgresql://memini:memini@re-memini:5432/memini
 ENV MEMINI_PROJECT_ID=reverse_engineering
-ENV OPENCODE_SERVER_PASSWORD=changeme
+# OPENCODE_SERVER_PASSWORD is set at runtime via docker-compose / -e
+# (not hardcoded here, so Buildx doesn't flag it as a hardcoded secret).
+# docker-compose.yml passes the user's ${OPENCODE_SERVER_PASSWORD}.
 
 EXPOSE 4096 8089
 

@@ -543,22 +543,22 @@ def build_catalog() -> list[Tool]:
         "diec",
         "diec (Detect It Easy CLI)",
         "RE Core",
-        "Identify packer / compiler / cryptor on PE/ELF/Mach-O binaries",
+        "Identify packer / compiler / cryptor on PE/ELF/Mach-O binaries "
+        "(NOTE: no prebuilt Linux binary; Arch and macOS only)",
         "diec",
         arch=lambda t: (
             _pacman_install(_subst(t, "detect-it-easy"), True)
             if _pacman_has("detect-it-easy")
-            else "manual (github.com/horsicq/Detect-It-Easy/releases)"
+            else "manual (build from github.com/horsicq/Detect-It-Easy)"
         ),
         debian=lambda t: (
-            _apt_install(t, True)
-            if _apt_has("detect-it-easy")
-            else "manual (github.com/horsicq/Detect-It-Easy/releases)"
+            "manual (no apt package; build from "
+            "github.com/horsicq/Detect-It-Easy or use the GUI release)"
         ),
         darwin=lambda t: (
             _brew_install(t)
             if shutil.which("brew")
-            else "manual (github.com/horsicq/Detect-It-Easy/releases)"
+            else "manual (build from github.com/horsicq/Detect-It-Easy)"
         ),
     )
     add(

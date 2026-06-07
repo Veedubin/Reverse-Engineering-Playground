@@ -15,13 +15,15 @@ LABEL org.opencontainers.image.licenses="LGPL-3.0"
 ENV DEBIAN_FRONTEND=noninteractive
 ENV R2MCP_PORT=9090
 
-# System packages
+# System packages. NB: `wine-gecko` and `wine-mono` are NOT in Ubuntu 24.04
+# (noble) — they were removed in jammy. Wine now ships without them; the
+# Mono runtime is provided by the `mono-runtime` package we install in core.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates curl git python3 python3-pip \
         radare2 \
         rizin \
         binutils file xxd \
-        wine wine64 wine-gecko wine-mono \
+        wine wine64 \
         build-essential pkg-config \
         tini \
     && rm -rf /var/lib/apt/lists/*

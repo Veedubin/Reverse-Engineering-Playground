@@ -26,11 +26,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Download Ghidra (the URL is the official NSA release; pin a version for reproducibility)
-ARG GHIDRA_VERSION=11.3.2
-ARG GHIDRA_DATE=20250422
+# v12.0.4 is the latest stable as of 2026-03; the v11.3.2 pin from earlier
+# releases no longer exists on the NSA mirror. To upgrade, see:
+# https://github.com/NationalSecurityAgency/ghidra/releases
+ARG GHIDRA_VERSION=12.0.4
+ARG GHIDRA_DATE=20260303
 RUN mkdir -p /opt && \
     cd /tmp && \
-    curl -fsSL "https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_${GHIDRA_VERSION}_build/${GHIDRA_DATE}_ghidra_${GHIDRA_VERSION}_PUBLIC.zip" \
+    curl -fsSL "https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_${GHIDRA_VERSION}_build/ghidra_${GHIDRA_VERSION}_PUBLIC_${GHIDRA_DATE}.zip" \
         -o ghidra.zip && \
     unzip -q ghidra.zip -d /opt && \
     rm ghidra.zip && \

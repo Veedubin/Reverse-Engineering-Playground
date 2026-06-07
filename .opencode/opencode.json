@@ -124,15 +124,6 @@
       ],
       "enabled": true
     },
-    "die-mcp": {
-      "type": "local",
-      "command": [
-        "python3",
-        "-m",
-        "die_mcp"
-      ],
-      "enabled": true
-    },
     "memini-ai-dev": {
       "type": "local",
       "command": [
