@@ -6,6 +6,12 @@
 
 15 specialist agents &bull; Ghidra MCP (245 tools) &bull; radare2-mcp &bull; semantic memory &bull; cross-distro installer &bull; multi-provider LLM support
 
+[![CI: validate](https://img.shields.io/github/actions/workflow/status/Veedubin/Reverse-Engineering-Playground/validate.yml?branch=master&label=validate&logo=github)](https://github.com/Veedubin/Reverse-Engineering-Playground/actions/workflows/validate.yml)
+[![CI: build-containers](https://img.shields.io/github/actions/workflow/status/Veedubin/Reverse-Engineering-Playground/build-containers.yml?label=build-containers&logo=github)](https://github.com/Veedubin/Reverse-Engineering-Playground/actions/workflows/build-containers.yml)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/Veedubin/Reverse-Engineering-Playground?include_prereleases)](https://github.com/Veedubin/Reverse-Engineering-Playground/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/Veedubin/Reverse-Engineering-Playground?style=social)](https://github.com/Veedubin/Reverse-Engineering-Playground/stargazers)
+
 </div>
 
 ---
@@ -1042,6 +1048,10 @@ Check `.env`:
   ```bash
   podman ps | grep timescaledb   # or: docker ps | grep postgres
   ```
+- If using the RE_Playground multi-container stack, override the bare-metal
+  default (`localhost:5434`) to point at the bundled `re-memini` container
+  (`postgresql://memini:memini@re-memini:5432/memini`) — this is set
+  automatically by `docker-compose.yml`/`podman-compose.yml`.
 
 ### Ghidra says it needs Java
 

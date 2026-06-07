@@ -65,6 +65,9 @@ RUN chmod -R a+rx /opt/re-playground/.opencode
 RUN mkdir -p /samples /workspace /memories
 ENV RE_SAMPLES_DIR=/samples
 ENV RE_WORKSPACE_DIR=/workspace
+# Defaults match docker-compose.yml. Override at `docker run` or compose
+# with -e MEMINI_DB_URL=... / -e MEMINI_AI_DIR=... to point at a different
+# PostgreSQL or a different memini-ai checkout.
 ENV MEMINI_AI_DIR=/opt/re-playground/.opencode/memini-ai
 ENV MEMINI_DB_URL=postgresql://memini:memini@re-memini:5432/memini
 ENV MEMINI_PROJECT_ID=reverse_engineering

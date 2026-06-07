@@ -16,6 +16,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV GHIDRA_INSTALL_DIR=/opt/ghidra
 ENV GHIDRA_HOME=/opt/ghidra
 ENV GHIDRA_MCP_PORT=8089
+ENV GHIDRA_MCP_BRIDGE=/opt/ghidra-mcp/bridge_mcp_ghidra.py
 
 # JDK 21 (Ghidra 11+ requires JDK 21)
 RUN apt-get update && apt-get install -y --no-install-recommends \

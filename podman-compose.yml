@@ -86,7 +86,9 @@ services:
       - re-ghidra-projects:/ghidra-projects
     environment:
       GHIDRA_MCP_PORT: "8089"
-    mem_limit: 4g
+    # Ghidra JVM wants ~3-4 GB; override in .env if you have a smaller box
+    # (e.g. 2g) or a workstation with headroom (e.g. 8g).
+    mem_limit: ${GHIDRA_MEM_LIMIT:-4g}
     depends_on:
       - files
     userns_mode: keep-id

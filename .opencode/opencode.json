@@ -92,7 +92,7 @@
       "type": "local",
       "command": [
         "python",
-        "/opt/ghidra-mcp/bridge_mcp_ghidra.py"
+        "{env:GHIDRA_MCP_BRIDGE}"
       ],
       "environment": {
         "GHIDRA_MCP_PORT": "8089",
