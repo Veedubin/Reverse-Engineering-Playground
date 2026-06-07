@@ -23,27 +23,41 @@ ENV OPENCODE_SERVER_HOSTNAME=0.0.0.0
 # jammy. We get DIE functionality from the `diec` CLI installed via
 # pip below, and Wine's Gecko/Mono are now bundled in the wine package
 # itself or installed by wine on first run.
+#
+# `libfuzzy-dev` provides the system ssdeep library; `build-essential`
+# (gcc + g++ + make + libc-dev + headers) lets the `ssdeep`,
+# `python-tlsh`, and `binary2strings` pip packages build their C
+# extensions. (ssdeep 3.4 has no prebuilt wheel for Python 3.12 /
+# Ubuntu 24.04, so we compile.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates curl git python3 python3-pip python3-venv \
+        ca-certificates curl git python3 python3-dev python3-pip python3-venv \
         nodejs npm \
         binutils file xxd upx-ucl \
         yara \
         mono-runtime mono-utils mono-devel \
         default-jre-headless \
         wine wine64 \
+        libfuzzy-dev build-essential \
         tini \
     && rm -rf /var/lib/apt/lists/*
 
-# Python tooling
-RUN pip3 install --no-cache-dir --break-system-packages \
-        questionary \
-        revula[full] \
-        pefile \
-        lief \
-        yara-python \
-        ssdeep tlsh \
-        scapy \
-        capstone
+# Install revula from source. We deliberately do NOT use revula's own
+# `scripts/install/install_all.sh` because it's broken on Ubuntu 24.04:
+# it tries `pip install` without `--break-system-packages` and hits PEP
+# 668 (externally-managed-environment). The script also installs 25+
+# system tools (qemu, wabt, ruby, jadx, apktool, etc.) we don't need
+# in the core image. The minimum needed for the MCP server to start is
+# `pip install -e ".[full]"` from a clone.
+#
+# `--ignore-installed` is required because the debian python3-pip ships
+# as a "managed" install — without it, revula's deps (z3-solver, angr,
+# capstone, etc.) refuse to install.
+#
+# See: https://github.com/president-xd/revula#install
+RUN git clone --depth 1 https://github.com/president-xd/revula.git /opt/revula && \
+    cd /opt/revula && \
+    pip3 install --no-cache-dir --break-system-packages --ignore-installed '.[full]' && \
+    which revula && revula --version 2>&1 | head -1 || true
 
 # .NET SDK 9 (for ilspycmd)
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 9.0 --install-dir /usr/share/dotnet

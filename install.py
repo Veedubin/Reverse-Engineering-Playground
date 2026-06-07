@@ -247,6 +247,28 @@ def _pipx_or_pip_install(pkg: str) -> str:
     return f"failed: {r.stderr.strip().splitlines()[-1] if r.stderr else 'unknown'}"
 
 
+def _git_pip_install(repo: str, extras: str = "", pkg_name: str | None = None) -> str:
+    """Clone a git repo and `pip install` from source. Use for tools not on PyPI.
+
+    Example: _git_pip_install("https://github.com/foo/bar.git", extras="[full]")
+    """
+    import tempfile
+
+    target = pkg_name or repo.rstrip("/").split("/")[-1].replace(".git", "")
+    with tempfile.TemporaryDirectory() as tmp:
+        clone = _run(["git", "clone", "--depth", "1", repo, f"{tmp}/{target}"])
+        if clone.returncode != 0:
+            return f"failed: git clone: {clone.stderr.strip().splitlines()[-1] if clone.stderr else 'unknown'}"
+        spec = f".{extras}" if extras else "."
+        r = _run(
+            [sys.executable, "-m", "pip", "install", "--user", spec],
+            cwd=f"{tmp}/{target}",
+        )
+        if r.returncode == 0:
+            return "installed"
+        return f"failed: {r.stderr.strip().splitlines()[-1] if r.stderr else 'unknown'}"
+
+
 def _dotnet_tool_install(pkg: str) -> str:
     """Install a .NET global tool (needs dotnet-sdk already on PATH)."""
     if not shutil.which("dotnet"):
@@ -517,26 +539,25 @@ def build_catalog() -> list[Tool]:
     )
 
     # ===== Windows / .NET RE =====
+    # revula is not on PyPI — install from source.
+    # https://github.com/president-xd/revula
     add(
         "revula",
         "revula (MCP server)",
         "RE Core",
-        "All-in-one RE MCP server (PE/ELF/Mach-O, YARA, Capa, .NET IL, Frida, GDB, Android, exploit dev)",
+        "All-in-one RE MCP server (PE/ELF/Mach-O, YARA, Capa, .NET IL, Frida, GDB, Android, exploit dev) — installed from source",
         "revula",
-        arch=lambda t: (
-            "skip (uv not installed)"
-            if not shutil.which("uv")
-            else _uv_tool_install(t, "revula[full]")
+        arch=lambda t: _git_pip_install(
+            "https://github.com/president-xd/revula.git",
+            extras="[full]",
         ),
-        debian=lambda t: (
-            "skip (uv not installed)"
-            if not shutil.which("uv")
-            else _uv_tool_install(t, "revula[full]")
+        debian=lambda t: _git_pip_install(
+            "https://github.com/president-xd/revula.git",
+            extras="[full]",
         ),
-        darwin=lambda t: (
-            "skip (uv not installed)"
-            if not shutil.which("uv")
-            else _uv_tool_install(t, "revula[full]")
+        darwin=lambda t: _git_pip_install(
+            "https://github.com/president-xd/revula.git",
+            extras="[full]",
         ),
     )
     add(

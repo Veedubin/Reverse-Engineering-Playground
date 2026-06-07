@@ -18,10 +18,11 @@ ENV R2MCP_PORT=9090
 # System packages. NB: `wine-gecko` and `wine-mono` are NOT in Ubuntu 24.04
 # (noble) — they were removed in jammy. Wine now ships without them; the
 # Mono runtime is provided by the `mono-runtime` package we install in core.
+# `rizin` is also not in noble (only in Ubuntu 24.10+ and as snap); we get
+# rizin functionality from r2 itself plus `pip install rizin` if needed.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates curl git python3 python3-pip \
         radare2 \
-        rizin \
         binutils file xxd \
         wine wine64 \
         build-essential pkg-config \
