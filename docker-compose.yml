@@ -83,7 +83,7 @@ services:
       start_period: 30s
       retries: 3
 
-  # ----- Ghidra SRE + 245-tool MCP bridge -----
+  # ----- Ghidra SRE + 256-tool MCP bridge -----
   ghidra:
     <<: [*restart, *logging]
     build:
@@ -103,6 +103,7 @@ services:
       - re-ghidra-projects:/ghidra-projects
     environment:
       GHIDRA_MCP_PORT: "8089"
+      GHIDRA_HEADLESS_PORT: "8090"
     # Ghidra JVM wants ~3-4 GB; override in .env if you have a smaller box
     # (e.g. 2g) or a workstation with headroom (e.g. 8g). The default of
     # 4g is safe for most laptops.

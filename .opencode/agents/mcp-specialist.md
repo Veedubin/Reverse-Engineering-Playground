@@ -1,7 +1,7 @@
 ---
 description: MCP Specialist v3 - MCP Protocol specialist for boomerang-v3.
 mode: subagent
-model: ollama/glm-5.1
+model: ollama/glm-5.2
 steps: 40
 permission:
   read:

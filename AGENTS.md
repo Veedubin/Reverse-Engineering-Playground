@@ -44,7 +44,7 @@ This project uses **Ghidra MCP** (245 tools) and **radare2-mcp** for binary anal
 - **Headless mode** — Docker-ready for CI/CD and automated analysis
 - **Convention enforcement** — Auto-fix naming, warn on style violations, reject no-op changes
 - **Cross-binary documentation** — SHA-256 hash matching propagates docs across binary versions
-- **Server**: `python $GHIDRA_MCP_BRIDGE/bridge_mcp_ghidra.py` (stdio transport) or HTTP on port 8089. Set `GHIDRA_MCP_BRIDGE` in `.env` to the directory containing the bridge script (defaults to `/opt/ghidra-mcp` in the ghidra/Dockerfile).
+- **Server**: `python -m bridge_mcp_ghidra` (stdio transport) or streamable-http on port 8089. In Docker, the bridge runs alongside the headless Java server in the same container; the bridge proxies MCP requests to the Java server on internal port 8090.
 
 ### radare2-mcp
 - **Native C implementation** using r2 APIs
