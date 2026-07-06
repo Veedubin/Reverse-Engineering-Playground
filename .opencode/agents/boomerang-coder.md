@@ -1,7 +1,7 @@
 ---
 description: Boomerang Coder v3 - Fast code generation specialist with memini-ai memory integration.
 mode: subagent
-model: ollama/glm-5.1
+model: ollama/glm-5.2
 steps: 50
 permission:
   read:

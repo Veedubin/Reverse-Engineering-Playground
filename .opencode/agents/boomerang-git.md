@@ -1,7 +1,7 @@
 ---
 description: Boomerang Git v3 - Version control with memini-ai for commit history.
 mode: subagent
-model: ollama/minimax-m2.7
+model: ollama/minimax-m3
 steps: 30
 permission:
   read:
