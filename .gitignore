@@ -64,3 +64,8 @@ targets/
 *.fw
 *.img
 .opencode/opencode-old.json
+
+# --- llama-cpp-ghidra audit (Ghidra project + binary, both rebuildable) ----
+examples/llama-cpp-ghidra/ghidra-project/
+examples/llama-cpp-ghidra/binary/llama-server
+examples/llama-cpp-ghidra/binary/libllama.so
