@@ -1,7 +1,7 @@
 ---
 description: Boomerang Release v3 - Release automation for boomerang-v3 packages.
 mode: subagent
-model: ollama-cloud/devstral-small-2:24b-cloud
+model: ollama/devstral-small-2:24b
 steps: 40
 permission:
   read:
