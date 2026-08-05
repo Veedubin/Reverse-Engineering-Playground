@@ -42,7 +42,7 @@ examples/llama-cpp-ghidra/
 ### 1. Build the audited binary
 
 ```bash
-cd /home/jcharles/Projects/reverse_engineering/RE_Playground/examples/llama-cpp-ghidra
+cd RE_Playground/examples/llama-cpp-ghidra
 ./scripts/build.sh
 # Produces: binary/llama-server, binary/llama-server.sha256,
 #           binary/source-info.json, binary/build.log

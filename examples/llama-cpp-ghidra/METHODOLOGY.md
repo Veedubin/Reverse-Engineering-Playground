@@ -421,7 +421,7 @@ The original `re-ghidra` container failed because the Dockerfile referenced the 
 
 ```bash
 # Get the connection token
-TOKEN=$(cat /home/jcharles/Projects/reverse_engineering/RE_Playground/.env.ghidra-mcp)
+TOKEN=$(cat /path/to/RE_Playground/.env.ghidra-mcp)
 
 # Test it
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8089/mcp/schema | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'{d[\"count\"]} tools exposed')"
