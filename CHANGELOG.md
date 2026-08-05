@@ -5,6 +5,22 @@ All notable changes to RE_Playground will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] — 2026-08-05
+
+### Fixed
+
+- **Ghidra MCP container rewritten for ghidra-mcp 5.15.0** — the bridge is now a proper Python package (`ghidra-mcp-bridge==5.15.0`); `docker/ghidra/Dockerfile` rebuilt as a multi-stage build and new `docker/ghidra/entrypoint.sh` launches the headless Java server (internal :8090) alongside the bridge (:8089). The old single-file bridge invocation no longer worked, so the container exposed no MCP tools.
+- **Transport switched to streamable-http** — `.opencode/opencode.json` ghidra-mcp server now uses `streamable-http` on port 8089 with `GHIDRA_MCP_AUTH_TOKEN` bearer auth (the headless server refuses to bind `0.0.0.0` without it). Token lives in `.env.ghidra-mcp` (gitignored); see `.env.example`.
+- `docker-compose.yml` / `podman-compose.yml` pass `GHIDRA_HEADLESS_PORT` and the auth-token env wiring.
+
+### Added
+
+- **`examples/llama-cpp-ghidra/`** — complete worked example: RE audit of the llama.cpp `llama-server`/`libllama` binaries with Ghidra MCP. Includes `METHODOLOGY.md` (448 lines), 7 deep-dive docs (sampling, KV-cache, logits production, output filtering, function index, cross-binary diff, production diff plan), and 3 reusable scripts (`build.sh`, `cross-binary-match.py`, `import-to-ghidra.sh`).
+
+### Changed
+
+- Agent model versions synced from workspace roster (boomerang-coder/writer/git/release/explorer/agent-builder, mcp-specialist).
+
 ## [0.2.0] — 2026-06-06
 
 ### Added
